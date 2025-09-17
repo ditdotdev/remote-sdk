@@ -42,7 +42,7 @@ dependencies {
     compile("org.slf4j:slf4j-api:1.7.29")
     ktlint("com.pinterest:ktlint:0.35.0")
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
-    testImplementation("io.mockk:mockk:1.9.3")
+    testImplementation("io.mockk:mockk:1.14.5")
 }
 
 // Jar configuration
