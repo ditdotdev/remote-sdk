@@ -76,9 +76,16 @@ class RsyncExecutor(
         } else {
             throw IllegalArgumentException("one of password or key must be specified")
         }
-        Files.setPosixFilePermissions(file.toPath(), mutableSetOf(
-                PosixFilePermission.OWNER_READ
-        ))
+
+        // Set file permissions only on POSIX-compliant systems (not Windows)
+        try {
+            Files.setPosixFilePermissions(file.toPath(), mutableSetOf(
+                    PosixFilePermission.OWNER_READ
+            ))
+        } catch (e: UnsupportedOperationException) {
+            // POSIX file permissions not supported on this platform (e.g., Windows)
+            // File permissions will be handled by the OS defaults
+        }
 
         if (port != null) {
             args.addAll(arrayOf("-p", port.toString()))

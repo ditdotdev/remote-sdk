@@ -142,7 +142,7 @@ class ArchiveRemoteTest : StringSpec() {
                     scratchPath.toString())
 
             val archivePath = "$scratchPath/volume.tar.gz"
-            server.archive!!.path shouldBe archivePath
+            server.archive!!.path shouldBe archivePath.replace('/', java.io.File.separatorChar)
 
             verify {
                 executor.exec(any<Process>(), "tar, czf, $archivePath, .")
@@ -173,7 +173,7 @@ class ArchiveRemoteTest : StringSpec() {
                     scratchPath.toString())
 
             val archivePath = "$scratchPath/volume.tar.gz"
-            server.archive!!.path shouldBe archivePath
+            server.archive!!.path shouldBe archivePath.replace('/', java.io.File.separatorChar)
 
             verify {
                 executor.exec(any<Process>(), "tar, xzf, $archivePath")
