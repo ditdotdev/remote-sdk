@@ -14,13 +14,13 @@ buildscript {
     }
 
     dependencies {
-        classpath("com.github.ben-manes:gradle-versions-plugin:0.27.0")
+        classpath("com.github.ben-manes:gradle-versions-plugin:0.52.0")
     }
 }
 
 plugins {
     kotlin("jvm") version "1.3.60"
-    id("com.github.ben-manes.versions") version("0.27.0")
+    id("com.github.ben-manes.versions") version("0.52.0")
     `maven-publish`
 }
 
