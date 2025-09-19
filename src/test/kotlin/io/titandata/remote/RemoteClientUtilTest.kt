@@ -11,7 +11,6 @@ import java.lang.IllegalArgumentException
 import java.net.URI
 
 class RemoteClientUtilTest : StringSpec() {
-
     private val util = RemoteClientUtil()
 
     init {

@@ -7,13 +7,14 @@ package io.titandata.remote.rsync
 import io.titandata.remote.RemoteProgress
 import io.titandata.shell.CommandException
 import io.titandata.shell.CommandExecutor
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.InputStream
 import java.math.BigDecimal
 import java.math.MathContext
 import java.nio.file.Files
 import java.nio.file.attribute.PosixFilePermission
-import org.slf4j.LoggerFactory
+import kotlin.io.path.createTempFile
 
 /**
  * This is a wrapper around the rsync command line tool, feeding progress back into the executor.
@@ -27,9 +28,8 @@ class RsyncExecutor(
     val key: String?,
     val src: String,
     val dst: String,
-    val cmd: CommandExecutor = CommandExecutor()
+    val cmd: CommandExecutor = CommandExecutor(),
 ) : Runnable {
-
     companion object {
         val log = LoggerFactory.getLogger(RsyncExecutor::class.java)
     }
@@ -61,7 +61,7 @@ class RsyncExecutor(
 
     fun buildSshCommand(
         file: File,
-        vararg command: String
+        vararg command: String,
     ): List<String> {
         val args = mutableListOf<String>()
 
@@ -79,9 +79,12 @@ class RsyncExecutor(
 
         // Set file permissions only on POSIX-compliant systems (not Windows)
         try {
-            Files.setPosixFilePermissions(file.toPath(), mutableSetOf(
-                    PosixFilePermission.OWNER_READ
-            ))
+            Files.setPosixFilePermissions(
+                file.toPath(),
+                mutableSetOf(
+                    PosixFilePermission.OWNER_READ,
+                ),
+            )
         } catch (e: UnsupportedOperationException) {
             // POSIX file permissions not supported on this platform (e.g., Windows)
             // File permissions will be handled by the OS defaults
@@ -99,7 +102,7 @@ class RsyncExecutor(
     }
 
     override fun run() {
-        val file = createTempFile()
+        val file = createTempFile().toFile()
         file.deleteOnExit()
         try {
             /*
@@ -108,9 +111,12 @@ class RsyncExecutor(
              * that re-uses the rsync executor.
              */
             val sshCommand = buildSshCommand(file)
-            val args = arrayOf("rsync", "-e", sshCommand.joinToString(" "),
+            val args =
+                arrayOf(
+                    "rsync", "-e", sshCommand.joinToString(" "),
                     "--info=progress2,stats2", "--inplace", "--delete", "--partial",
-                    "-raz", "--rsync-path=sudo rsync", "--no-human-readable", src, dst)
+                    "-raz", "--rsync-path=sudo rsync", "--no-human-readable", src, dst,
+                )
             log.info("running command: ${args.joinToString()}")
             val process = cmd.start(*args)
             try {
@@ -188,15 +194,19 @@ class RsyncExecutor(
             val sent = progressMatch.groupValues[1].toLong()
             val percent = progressMatch.groupValues[2].toInt()
             val rawRate = progressMatch.groupValues[3].toDouble()
-            val rate = when (progressMatch.groupValues[4]) {
-                "G" -> rawRate * 1024 * 1024 * 1024
-                "M" -> rawRate * 1024 * 1024
-                "k" -> rawRate * 1024
-                else -> throw IllegalStateException("unknown rsync units '${progressMatch.groupValues[4]}'")
-            }
+            val rate =
+                when (progressMatch.groupValues[4]) {
+                    "G" -> rawRate * 1024 * 1024 * 1024
+                    "M" -> rawRate * 1024 * 1024
+                    "k" -> rawRate * 1024
+                    else -> throw IllegalStateException("unknown rsync units '${progressMatch.groupValues[4]}'")
+                }
 
-            updateProgress(RemoteProgress.PROGRESS, "${numberToString(sent.toDouble())}B (${numberToString(rate)}B/s)",
-                    percent)
+            updateProgress(
+                RemoteProgress.PROGRESS,
+                "${numberToString(sent.toDouble())}B (${numberToString(rate)}B/s)",
+                percent,
+            )
             return false
         }
 
@@ -233,7 +243,6 @@ class RsyncExecutor(
      * correct it's more confusing to the average user.
      */
     fun numberToString(rawValue: Double): String {
-
         val suffixes = arrayOf("", "K", "M", "G", "T", "P", "E")
         var suffix = ""
         var value = rawValue
@@ -246,12 +255,13 @@ class RsyncExecutor(
         }
 
         var valueStr: String
-        if (value > 1024 || Math.round(value).toDouble() == value)
+        if (value > 1024 || Math.round(value).toDouble() == value) {
             valueStr = Math.round(value).toString()
-        else if (value < 10)
+        } else if (value < 10) {
             valueStr = "%.2f".format(value)
-        else
+        } else {
             valueStr = BigDecimal(value, MathContext(4)).toString()
+        }
 
         return valueStr + suffix
     }

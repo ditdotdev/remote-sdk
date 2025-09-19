@@ -12,7 +12,7 @@ enum class RemoteProgress {
     MESSAGE, // Singular message, just display and move on.
     START, // Start of a longer running operation, where multiple progress message may appear followed by END
     PROGRESS, // Progress update within a (START, END) pair
-    END // End of a START operation
+    END, // End of a START operation
 }
 
 /**
@@ -20,7 +20,7 @@ enum class RemoteProgress {
  */
 enum class RemoteOperationType {
     PUSH,
-    PULL
+    PULL,
 }
 
 /**
@@ -53,7 +53,7 @@ data class RemoteOperation(
     val operationId: String,
     val commitId: String,
     val commit: Map<String, Any>?,
-    val type: RemoteOperationType
+    val type: RemoteOperationType,
 )
 
 /**
@@ -61,7 +61,6 @@ data class RemoteOperation(
  * fetching remote commits and running push / pull operations.
  */
 interface RemoteServer {
-
     /**
      * Returns the canonical name of this provider, such as "ssh" or "s3". This must be globally unique, and must
      * match the name used in the corresponding client.
@@ -90,12 +89,20 @@ interface RemoteServer {
      * There is not yet support for pagination, though that will be added in the future to avoid having to fetch
      * the entire commit history every time.
      */
-    fun listCommits(remote: Map<String, Any>, parameters: Map<String, Any>, tags: List<Pair<String, String?>>): List<Pair<String, Map<String, Any>>>
+    fun listCommits(
+        remote: Map<String, Any>,
+        parameters: Map<String, Any>,
+        tags: List<Pair<String, String?>>,
+    ): List<Pair<String, Map<String, Any>>>
 
     /**
      * Fetches a single commit from the given remote. Returns null if no such commit exists.
      */
-    fun getCommit(remote: Map<String, Any>, parameters: Map<String, Any>, commitId: String): Map<String, Any>?
+    fun getCommit(
+        remote: Map<String, Any>,
+        parameters: Map<String, Any>,
+        commitId: String,
+    ): Map<String, Any>?
 
     /**
      * Starts a new data operation. This method is invoked once for each operation, and is passed all context around
@@ -118,7 +125,7 @@ interface RemoteServer {
         volumeName: String,
         volumeDescription: String,
         volumePath: String,
-        scratchPath: String
+        scratchPath: String,
     )
 
     /**
@@ -126,12 +133,20 @@ interface RemoteServer {
      * or failure. The 'operationData' parameter is passed from teh result of syncDataStart(). The 'isSuccessful' flag
      * indicates whether the operation was successful.
      */
-    fun syncDataEnd(operation: RemoteOperation, operationData: Any?, isSuccessful: Boolean)
+    fun syncDataEnd(
+        operation: RemoteOperation,
+        operationData: Any?,
+        isSuccessful: Boolean,
+    )
 
     /**
      * Push metadata for the commit to the remote. This can be done either when creating a new commit, or when
      * doing a metadata-only update (e.g. pushing new tags). The 'isUpdate' flag indicates whether we are updating
      * existing metadata or creating new metadata. This method is not called for pull operations.
      */
-    fun pushMetadata(operation: RemoteOperation, commit: Map<String, Any>, isUpdate: Boolean)
+    fun pushMetadata(
+        operation: RemoteOperation,
+        commit: Map<String, Any>,
+        isUpdate: Boolean,
+    )
 }

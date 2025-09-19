@@ -9,20 +9,26 @@ import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
 class RemoteServerUtil {
-
     /**
      * Sorts a list of commits in reverse descending order, based on timestamp.
      */
     fun sortDescending(commits: List<Pair<String, Map<String, Any>>>): List<Pair<String, Map<String, Any>>> {
-        return commits.sortedByDescending { OffsetDateTime.parse(it.second.get("timestamp")?.toString()
-                ?: DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochSecond(0)),
-                DateTimeFormatter.ISO_DATE_TIME) }
+        return commits.sortedByDescending {
+            OffsetDateTime.parse(
+                it.second.get("timestamp")?.toString()
+                    ?: DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochSecond(0)),
+                DateTimeFormatter.ISO_DATE_TIME,
+            )
+        }
     }
 
     /**
      * Match a commit against a set of tags. Returns true if the commit matches the given tags, false otherwise.
      */
-    fun matchTags(commit: Map<String, Any>, tags: List<Pair<String, String?>>): Boolean {
+    fun matchTags(
+        commit: Map<String, Any>,
+        tags: List<Pair<String, String?>>,
+    ): Boolean {
         if (tags.size == 0) {
             return true
         }
@@ -51,7 +57,11 @@ class RemoteServerUtil {
     /**
      * Validate a set of properties (as with remotes and parameters) for required and optional fields.
      */
-    fun validateFields(props: Map<String, Any>, required: List<String>, optional: List<String>) {
+    fun validateFields(
+        props: Map<String, Any>,
+        required: List<String>,
+        optional: List<String>,
+    ) {
         for (prop in required) {
             if (!props.containsKey(prop)) {
                 throw IllegalArgumentException("missing required property '$prop'")

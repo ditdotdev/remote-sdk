@@ -15,11 +15,21 @@ import io.titandata.shell.CommandExecutor
  * elements of syncing volumes.
  */
 abstract class RsyncRemote : RemoteServer {
-
     internal val executor = CommandExecutor()
 
-    abstract fun getRemotePath(operation: RemoteOperation, operationData: Any?, volume: String): String
-    abstract fun getRsync(operation: RemoteOperation, operationData: Any?, src: String, dst: String, executor: CommandExecutor): RsyncExecutor
+    abstract fun getRemotePath(
+        operation: RemoteOperation,
+        operationData: Any?,
+        volume: String,
+    ): String
+
+    abstract fun getRsync(
+        operation: RemoteOperation,
+        operationData: Any?,
+        src: String,
+        dst: String,
+        executor: CommandExecutor,
+    ): RsyncExecutor
 
     override fun syncDataVolume(
         operation: RemoteOperation,
@@ -27,14 +37,15 @@ abstract class RsyncRemote : RemoteServer {
         volumeName: String,
         volumeDescription: String,
         volumePath: String,
-        scratchPath: String
+        scratchPath: String,
     ) {
         val remotePath = getRemotePath(operation, operationData, volumeName)
-        val (src, dst) = if (operation.type == RemoteOperationType.PUSH) {
-            volumePath to remotePath
-        } else {
-            remotePath to volumePath
-        }
+        val (src, dst) =
+            if (operation.type == RemoteOperationType.PUSH) {
+                volumePath to remotePath
+            } else {
+                remotePath to volumePath
+            }
 
         operation.updateProgress(RemoteProgress.START, "Syncing $volumeDescription", 0)
         val rsync = getRsync(operation, operationData, src, dst, executor)

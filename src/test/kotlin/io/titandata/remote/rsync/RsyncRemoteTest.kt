@@ -24,7 +24,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 class RsyncRemoteTest : StringSpec() {
-
     @MockK
     lateinit var executor: CommandExecutor
 
@@ -32,11 +31,21 @@ class RsyncRemoteTest : StringSpec() {
         var src: String? = null
         var dst: String? = null
 
-        override fun getRemotePath(operation: RemoteOperation, operationData: Any?, volume: String): String {
+        override fun getRemotePath(
+            operation: RemoteOperation,
+            operationData: Any?,
+            volume: String,
+        ): String {
             return "user@host:/path"
         }
 
-        override fun getRsync(operation: RemoteOperation, operationData: Any?, src: String, dst: String, executor: CommandExecutor): RsyncExecutor {
+        override fun getRsync(
+            operation: RemoteOperation,
+            operationData: Any?,
+            src: String,
+            dst: String,
+            executor: CommandExecutor,
+        ): RsyncExecutor {
             this.src = src
             this.dst = dst
             return mockk(relaxed = true)
@@ -54,21 +63,37 @@ class RsyncRemoteTest : StringSpec() {
             return parameters
         }
 
-        override fun listCommits(remote: Map<String, Any>, parameters: Map<String, Any>, tags: List<Pair<String, String?>>): List<Pair<String, Map<String, Any>>> {
+        override fun listCommits(
+            remote: Map<String, Any>,
+            parameters: Map<String, Any>,
+            tags: List<Pair<String, String?>>,
+        ): List<Pair<String, Map<String, Any>>> {
             return emptyList()
         }
 
-        override fun getCommit(remote: Map<String, Any>, parameters: Map<String, Any>, commitId: String): Map<String, Any>? {
+        override fun getCommit(
+            remote: Map<String, Any>,
+            parameters: Map<String, Any>,
+            commitId: String,
+        ): Map<String, Any>? {
             return null
         }
 
         override fun syncDataStart(operation: RemoteOperation) {
         }
 
-        override fun syncDataEnd(operation: RemoteOperation, operationData: Any?, isSuccessful: Boolean) {
+        override fun syncDataEnd(
+            operation: RemoteOperation,
+            operationData: Any?,
+            isSuccessful: Boolean,
+        ) {
         }
 
-        override fun pushMetadata(operation: RemoteOperation, commit: Map<String, Any>, isUpdate: Boolean) {
+        override fun pushMetadata(
+            operation: RemoteOperation,
+            commit: Map<String, Any>,
+            isUpdate: Boolean,
+        ) {
         }
     }
 
@@ -79,7 +104,7 @@ class RsyncRemoteTest : StringSpec() {
     data class ProgressEntry(
         val type: RemoteProgress,
         val message: String?,
-        val percent: Int?
+        val percent: Int?,
     )
 
     lateinit var progress: MutableList<ProgressEntry>
@@ -98,32 +123,48 @@ class RsyncRemoteTest : StringSpec() {
         return MockKAnnotations.init(this)
     }
 
-    override fun afterTest(testCase: TestCase, result: TestResult) {
+    override fun afterTest(
+        testCase: TestCase,
+        result: TestResult,
+    ) {
         Files.delete(scratchPath)
         clearAllMocks()
     }
 
-    val updateProgress = fun(type: RemoteProgress, message: String?, percent: Int?) {
-        progress.add(ProgressEntry(type, message, percent))
-    }
+    val updateProgress =
+
+        fun(
+            type: RemoteProgress,
+            message: String?,
+            percent: Int?,
+        ) {
+            progress.add(ProgressEntry(type, message, percent))
+        }
 
     fun getOperation(type: RemoteOperationType): RemoteOperation {
         return RemoteOperation(
-                updateProgress = updateProgress,
-                remote = emptyMap(),
-                parameters = emptyMap(),
-                operationId = "operation",
-                commitId = "commit",
-                commit = null,
-                type = type)
+            updateProgress = updateProgress,
+            remote = emptyMap(),
+            parameters = emptyMap(),
+            operationId = "operation",
+            commitId = "commit",
+            commit = null,
+            type = type,
+        )
     }
 
     init {
         "push updates progress correctly" {
             every { executor.exec(any<Process>(), any()) } returns ""
 
-            server.syncDataVolume(getOperation(RemoteOperationType.PUSH), null, "volume", "description", "/volume",
-                    scratchPath.toString())
+            server.syncDataVolume(
+                getOperation(RemoteOperationType.PUSH),
+                null,
+                "volume",
+                "description",
+                "/volume",
+                scratchPath.toString(),
+            )
 
             progress.size shouldBe 1
             progress[0].type shouldBe RemoteProgress.START
@@ -134,8 +175,14 @@ class RsyncRemoteTest : StringSpec() {
         "push syncs data correctly" {
             every { executor.exec(any<Process>(), any()) } returns ""
 
-            server.syncDataVolume(getOperation(RemoteOperationType.PUSH), null, "volume", "description", "/volume",
-                    scratchPath.toString())
+            server.syncDataVolume(
+                getOperation(RemoteOperationType.PUSH),
+                null,
+                "volume",
+                "description",
+                "/volume",
+                scratchPath.toString(),
+            )
 
             server.src shouldBe "/volume"
             server.dst shouldBe "user@host:/path"
@@ -144,8 +191,14 @@ class RsyncRemoteTest : StringSpec() {
         "pull updates progress correctly" {
             every { executor.exec(any<Process>(), any()) } returns ""
 
-            server.syncDataVolume(getOperation(RemoteOperationType.PULL), null, "volume", "description", "/volume",
-                    scratchPath.toString())
+            server.syncDataVolume(
+                getOperation(RemoteOperationType.PULL),
+                null,
+                "volume",
+                "description",
+                "/volume",
+                scratchPath.toString(),
+            )
 
             progress.size shouldBe 1
             progress[0].type shouldBe RemoteProgress.START
@@ -156,8 +209,14 @@ class RsyncRemoteTest : StringSpec() {
         "pull syncs data correctly" {
             every { executor.exec(any<Process>(), any()) } returns ""
 
-            server.syncDataVolume(getOperation(RemoteOperationType.PULL), null, "volume", "description", "/volume",
-                    scratchPath.toString())
+            server.syncDataVolume(
+                getOperation(RemoteOperationType.PULL),
+                null,
+                "volume",
+                "description",
+                "/volume",
+                scratchPath.toString(),
+            )
 
             server.dst shouldBe "/volume"
             server.src shouldBe "user@host:/path"

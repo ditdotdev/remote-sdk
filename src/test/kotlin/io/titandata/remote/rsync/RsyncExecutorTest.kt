@@ -24,14 +24,13 @@ import java.io.ByteArrayInputStream
 import java.io.InputStream
 
 class RsyncExecutorTest : StringSpec() {
-
     @SpyK
     var executor: CommandExecutor = CommandExecutor()
 
     data class ProgressEntry(
         val type: RemoteProgress,
         val message: String?,
-        val percent: Int?
+        val percent: Int?,
     )
 
     lateinit var progress: MutableList<ProgressEntry>
@@ -41,7 +40,10 @@ class RsyncExecutorTest : StringSpec() {
         return MockKAnnotations.init(this)
     }
 
-    override fun afterTest(testCase: TestCase, result: TestResult) {
+    override fun afterTest(
+        testCase: TestCase,
+        result: TestResult,
+    ) {
         clearAllMocks()
     }
 
@@ -49,9 +51,15 @@ class RsyncExecutorTest : StringSpec() {
         return this.javaClass.getResource(name).openStream()
     }
 
-    val updateProgress = fun(type: RemoteProgress, message: String?, percent: Int?) {
-        progress.add(ProgressEntry(type, message, percent))
-    }
+    val updateProgress =
+
+        fun(
+            type: RemoteProgress,
+            message: String?,
+            percent: Int?,
+        ) {
+            progress.add(ProgressEntry(type, message, percent))
+        }
 
     fun getRsync(): RsyncExecutor {
         return RsyncExecutor(updateProgress, null, "password", null, "src", "dst", executor)
@@ -80,20 +88,20 @@ class RsyncExecutorTest : StringSpec() {
         "number to string returns correct result" {
             val rsync = getRsync()
 
-            val Ki = 1024.0
-            val Mi = 1024 * Ki
-            val Gi = 1024 * Mi
+            val ki = 1024.0
+            val mi = 1024 * ki
+            val gi = 1024 * mi
 
             rsync.numberToString(45.0) shouldBe "45"
             rsync.numberToString(1023.0) shouldBe "1023"
             rsync.numberToString(1024.0) shouldBe "1K"
             rsync.numberToString(1025.0) shouldBe "1.00K"
-            rsync.numberToString(2.5 * Ki) shouldBe "2.50K"
-            rsync.numberToString(900 * Ki) shouldBe "900K"
-            rsync.numberToString(900.2 * Ki) shouldBe "900.2K"
-            rsync.numberToString(1000.6 * Ki) shouldBe "1001K"
+            rsync.numberToString(2.5 * ki) shouldBe "2.50K"
+            rsync.numberToString(900 * ki) shouldBe "900K"
+            rsync.numberToString(900.2 * ki) shouldBe "900.2K"
+            rsync.numberToString(1000.6 * ki) shouldBe "1001K"
             rsync.numberToString(10239.0) shouldBe "10.00K"
-            rsync.numberToString(73.23 * Gi) shouldBe "73.23G"
+            rsync.numberToString(73.23 * gi) shouldBe "73.23G"
         }
 
         "run generates correct output" {
@@ -129,9 +137,10 @@ class RsyncExecutorTest : StringSpec() {
 
             val rsync = getRsync()
 
-            val e = shouldThrow<CommandException> {
-                rsync.run()
-            }
+            val e =
+                shouldThrow<CommandException> {
+                    rsync.run()
+                }
 
             e.exitCode shouldBe 1
             e.output shouldBe "error string"

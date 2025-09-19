@@ -16,11 +16,21 @@ import java.io.File
  * It handles the basics of creating or extracting the archives, and invokes a simpler upload / download interface.
  */
 abstract class ArchiveRemote : RemoteServer {
-
     internal val executor = CommandExecutor()
 
-    abstract fun pushArchive(operation: RemoteOperation, operationData: Any?, volume: String, archive: File)
-    abstract fun pullArchive(operation: RemoteOperation, operationData: Any?, volume: String, archive: File)
+    abstract fun pushArchive(
+        operation: RemoteOperation,
+        operationData: Any?,
+        volume: String,
+        archive: File,
+    )
+
+    abstract fun pullArchive(
+        operation: RemoteOperation,
+        operationData: Any?,
+        volume: String,
+        archive: File,
+    )
 
     override fun syncDataVolume(
         operation: RemoteOperation,
@@ -28,13 +38,14 @@ abstract class ArchiveRemote : RemoteServer {
         volumeName: String,
         volumeDescription: String,
         volumePath: String,
-        scratchPath: String
+        scratchPath: String,
     ) {
         if (operation.type == RemoteOperationType.PUSH) {
             operation.updateProgress(RemoteProgress.START, "Creating archive for $volumeDescription", null)
             val archive = "$scratchPath/$volumeName.tar.gz"
             val args = arrayOf("tar", "czf", archive, ".")
-            val process = ProcessBuilder()
+            val process =
+                ProcessBuilder()
                     .directory(File(volumePath))
                     .command(*args)
                     .start()
@@ -51,10 +62,14 @@ abstract class ArchiveRemote : RemoteServer {
             pullArchive(operation, operationData, volumeName, File(archive))
             operation.updateProgress(RemoteProgress.END, null, null)
 
-            operation.updateProgress(RemoteProgress.START,
-                    "Extracting archive for $volumeDescription", null)
+            operation.updateProgress(
+                RemoteProgress.START,
+                "Extracting archive for $volumeDescription",
+                null,
+            )
             val args = arrayOf("tar", "xzf", archive)
-            val process = ProcessBuilder()
+            val process =
+                ProcessBuilder()
                     .directory(File(volumePath))
                     .command(*args)
                     .start()

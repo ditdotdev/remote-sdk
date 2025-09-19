@@ -12,7 +12,7 @@ class RemoteClientUtil {
         val password: String?,
         val host: String?,
         val port: Int?,
-        val path: String?
+        val path: String?,
     )
 
     fun getConnectionInfo(uri: URI): ConnectionInfo {
@@ -26,20 +26,23 @@ class RemoteClientUtil {
             password = uri.userInfo.substringAfter(":")
         }
 
-        val host = when (uri.host) {
-            "" -> null
-            else -> uri.host
-        }
+        val host =
+            when (uri.host) {
+                "" -> null
+                else -> uri.host
+            }
 
-        val port = when (uri.port) {
-            -1 -> null
-            else -> uri.port
-        }
+        val port =
+            when (uri.port) {
+                -1 -> null
+                else -> uri.port
+            }
 
-        val path = when (uri.path) {
-            "" -> null
-            else -> uri.path
-        }
+        val path =
+            when (uri.path) {
+                "" -> null
+                else -> uri.path
+            }
 
         return ConnectionInfo(username, password, host, port, path)
     }

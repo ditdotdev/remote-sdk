@@ -26,18 +26,27 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 class ArchiveRemoteTest : StringSpec() {
-
     @MockK
     lateinit var executor: CommandExecutor
 
     class TestRemote : ArchiveRemote() {
         var archive: File? = null
 
-        override fun pushArchive(operation: RemoteOperation, operationData: Any?, volume: String, archive: File) {
+        override fun pushArchive(
+            operation: RemoteOperation,
+            operationData: Any?,
+            volume: String,
+            archive: File,
+        ) {
             this.archive = archive
         }
 
-        override fun pullArchive(operation: RemoteOperation, operationData: Any?, volume: String, archive: File) {
+        override fun pullArchive(
+            operation: RemoteOperation,
+            operationData: Any?,
+            volume: String,
+            archive: File,
+        ) {
             this.archive = archive
         }
 
@@ -53,21 +62,37 @@ class ArchiveRemoteTest : StringSpec() {
             return parameters
         }
 
-        override fun listCommits(remote: Map<String, Any>, parameters: Map<String, Any>, tags: List<Pair<String, String?>>): List<Pair<String, Map<String, Any>>> {
+        override fun listCommits(
+            remote: Map<String, Any>,
+            parameters: Map<String, Any>,
+            tags: List<Pair<String, String?>>,
+        ): List<Pair<String, Map<String, Any>>> {
             return emptyList()
         }
 
-        override fun getCommit(remote: Map<String, Any>, parameters: Map<String, Any>, commitId: String): Map<String, Any>? {
+        override fun getCommit(
+            remote: Map<String, Any>,
+            parameters: Map<String, Any>,
+            commitId: String,
+        ): Map<String, Any>? {
             return null
         }
 
         override fun syncDataStart(operation: RemoteOperation) {
         }
 
-        override fun syncDataEnd(operation: RemoteOperation, operationData: Any?, isSuccessful: Boolean) {
+        override fun syncDataEnd(
+            operation: RemoteOperation,
+            operationData: Any?,
+            isSuccessful: Boolean,
+        ) {
         }
 
-        override fun pushMetadata(operation: RemoteOperation, commit: Map<String, Any>, isUpdate: Boolean) {
+        override fun pushMetadata(
+            operation: RemoteOperation,
+            commit: Map<String, Any>,
+            isUpdate: Boolean,
+        ) {
         }
     }
 
@@ -78,7 +103,7 @@ class ArchiveRemoteTest : StringSpec() {
     data class ProgressEntry(
         val type: RemoteProgress,
         val message: String?,
-        val percent: Int?
+        val percent: Int?,
     )
 
     lateinit var progress: MutableList<ProgressEntry>
@@ -97,32 +122,48 @@ class ArchiveRemoteTest : StringSpec() {
         return MockKAnnotations.init(this)
     }
 
-    override fun afterTest(testCase: TestCase, result: TestResult) {
+    override fun afterTest(
+        testCase: TestCase,
+        result: TestResult,
+    ) {
         Files.delete(scratchPath)
         clearAllMocks()
     }
 
-    val updateProgress = fun(type: RemoteProgress, message: String?, percent: Int?) {
-        progress.add(ProgressEntry(type, message, percent))
-    }
+    val updateProgress =
+
+        fun(
+            type: RemoteProgress,
+            message: String?,
+            percent: Int?,
+        ) {
+            progress.add(ProgressEntry(type, message, percent))
+        }
 
     fun getOperation(type: RemoteOperationType): RemoteOperation {
         return RemoteOperation(
-                updateProgress = updateProgress,
-                remote = emptyMap(),
-                parameters = emptyMap(),
-                operationId = "operation",
-                commitId = "commit",
-                commit = null,
-                type = type)
+            updateProgress = updateProgress,
+            remote = emptyMap(),
+            parameters = emptyMap(),
+            operationId = "operation",
+            commitId = "commit",
+            commit = null,
+            type = type,
+        )
     }
 
     init {
         "push updates progress correctly" {
             every { executor.exec(any<Process>(), any()) } returns ""
 
-            server.syncDataVolume(getOperation(RemoteOperationType.PUSH), null, "volume", "description", "/path",
-                    scratchPath.toString())
+            server.syncDataVolume(
+                getOperation(RemoteOperationType.PUSH),
+                null,
+                "volume",
+                "description",
+                "/path",
+                scratchPath.toString(),
+            )
 
             progress.size shouldBe 4
             progress[0].type shouldBe RemoteProgress.START
@@ -138,8 +179,14 @@ class ArchiveRemoteTest : StringSpec() {
         "push creates archive correctly" {
             every { executor.exec(any<Process>(), any()) } returns ""
 
-            server.syncDataVolume(getOperation(RemoteOperationType.PUSH), null, "volume", "description", "/path",
-                    scratchPath.toString())
+            server.syncDataVolume(
+                getOperation(RemoteOperationType.PUSH),
+                null,
+                "volume",
+                "description",
+                "/path",
+                scratchPath.toString(),
+            )
 
             val archivePath = "$scratchPath/volume.tar.gz"
             server.archive!!.path shouldBe archivePath.replace('/', java.io.File.separatorChar)
@@ -152,8 +199,14 @@ class ArchiveRemoteTest : StringSpec() {
         "pull updates progress correctly" {
             every { executor.exec(any<Process>(), any()) } returns ""
 
-            server.syncDataVolume(getOperation(RemoteOperationType.PULL), null, "volume", "description", "/path",
-                    scratchPath.toString())
+            server.syncDataVolume(
+                getOperation(RemoteOperationType.PULL),
+                null,
+                "volume",
+                "description",
+                "/path",
+                scratchPath.toString(),
+            )
 
             progress.size shouldBe 4
             progress[0].type shouldBe RemoteProgress.START
@@ -169,8 +222,14 @@ class ArchiveRemoteTest : StringSpec() {
         "pull extracts archive correctly" {
             every { executor.exec(any<Process>(), any()) } returns ""
 
-            server.syncDataVolume(getOperation(RemoteOperationType.PULL), null, "volume", "description", "/path",
-                    scratchPath.toString())
+            server.syncDataVolume(
+                getOperation(RemoteOperationType.PULL),
+                null,
+                "volume",
+                "description",
+                "/path",
+                scratchPath.toString(),
+            )
 
             val archivePath = "$scratchPath/volume.tar.gz"
             server.archive!!.path shouldBe archivePath.replace('/', java.io.File.separatorChar)

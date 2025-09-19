@@ -13,7 +13,6 @@ import java.net.URI
  * side implementation.
  */
 interface RemoteClient {
-
     /**
      * Returns the canonical name of this provider, such as "ssh" or "s3". This must be globally unique, and must
      * match the leading URI component (ssh://...).
@@ -27,7 +26,10 @@ interface RemoteClient {
      * such as "-p keyFile=/path/to/sshKey". This should throw an IllegalArgumentException for a bad URI format
      * or invalid properties.
      */
-    fun parseUri(uri: URI, additionalProperties: Map<String, String>): Map<String, Any>
+    fun parseUri(
+        uri: URI,
+        additionalProperties: Map<String, String>,
+    ): Map<String, Any>
 
     /**
      * Convert a remote back into URI form for display. Since this is for display only, any sensitive information

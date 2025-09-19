@@ -9,7 +9,6 @@ import io.kotlintest.shouldThrow
 import io.kotlintest.specs.StringSpec
 
 class RemoteServerUtilTest : StringSpec() {
-
     private val util = RemoteServerUtil()
 
     private fun makeCommit(vararg tags: Pair<String, String>): Map<String, Any> {
@@ -49,12 +48,13 @@ class RemoteServerUtilTest : StringSpec() {
         }
 
         "sort descending works" {
-            val commits = listOf(
+            val commits =
+                listOf(
                     "four" to mapOf("timestamp" to "2019-09-21T13:45:30Z"),
                     "one" to mapOf("timestamp" to "2019-09-20T13:45:36Z"),
                     "three" to mapOf("timestamp" to "2019-09-20T13:45:38Z"),
-                    "two" to mapOf("timestamp" to "2019-09-20T13:45:37Z")
-            )
+                    "two" to mapOf("timestamp" to "2019-09-20T13:45:37Z"),
+                )
             val sorted = util.sortDescending(commits)
             sorted.size shouldBe 4
             sorted[0].first shouldBe "four"
@@ -64,12 +64,13 @@ class RemoteServerUtilTest : StringSpec() {
         }
 
         "sort descending places commits without timestamps last" {
-            val commits = listOf(
+            val commits =
+                listOf(
                     "four" to mapOf(),
                     "one" to mapOf("timestamp" to "2019-09-20T13:45:36Z"),
                     "three" to mapOf("timestamp" to "2019-09-20T13:45:38Z"),
-                    "two" to mapOf("timestamp" to "2019-09-20T13:45:37Z")
-            )
+                    "two" to mapOf("timestamp" to "2019-09-20T13:45:37Z"),
+                )
             val sorted = util.sortDescending(commits)
             sorted.size shouldBe 4
             sorted[0].first shouldBe "three"
