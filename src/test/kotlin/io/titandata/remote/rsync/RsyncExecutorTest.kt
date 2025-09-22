@@ -47,9 +47,7 @@ class RsyncExecutorTest : StringSpec() {
         clearAllMocks()
     }
 
-    fun getResource(name: String): InputStream {
-        return this.javaClass.getResource(name).openStream()
-    }
+    private fun getResource(name: String): InputStream = this.javaClass.getResource(name).openStream()
 
     val updateProgress =
 
@@ -61,9 +59,7 @@ class RsyncExecutorTest : StringSpec() {
             progress.add(ProgressEntry(type, message, percent))
         }
 
-    fun getRsync(): RsyncExecutor {
-        return RsyncExecutor(updateProgress, null, "password", null, "src", "dst", executor)
-    }
+    private fun getRsync(): RsyncExecutor = RsyncExecutor(updateProgress, null, "password", null, "src", "dst", executor)
 
     override fun testCaseOrder() = TestCaseOrder.Random
 

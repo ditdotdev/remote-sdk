@@ -113,9 +113,18 @@ class RsyncExecutor(
             val sshCommand = buildSshCommand(file)
             val args =
                 arrayOf(
-                    "rsync", "-e", sshCommand.joinToString(" "),
-                    "--info=progress2,stats2", "--inplace", "--delete", "--partial",
-                    "-raz", "--rsync-path=sudo rsync", "--no-human-readable", src, dst,
+                    "rsync",
+                    "-e",
+                    sshCommand.joinToString(" "),
+                    "--info=progress2,stats2",
+                    "--inplace",
+                    "--delete",
+                    "--partial",
+                    "-raz",
+                    "--rsync-path=sudo rsync",
+                    "--no-human-readable",
+                    src,
+                    dst,
                 )
             log.info("running command: ${args.joinToString()}")
             val process = cmd.start(*args)

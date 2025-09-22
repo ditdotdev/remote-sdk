@@ -50,33 +50,23 @@ class ArchiveRemoteTest : StringSpec() {
             this.archive = archive
         }
 
-        override fun getProvider(): String {
-            return "test"
-        }
+        override fun getProvider(): String = "test"
 
-        override fun validateRemote(remote: Map<String, Any>): Map<String, Any> {
-            return remote
-        }
+        override fun validateRemote(remote: Map<String, Any>): Map<String, Any> = remote
 
-        override fun validateParameters(parameters: Map<String, Any>): Map<String, Any> {
-            return parameters
-        }
+        override fun validateParameters(parameters: Map<String, Any>): Map<String, Any> = parameters
 
         override fun listCommits(
             remote: Map<String, Any>,
             parameters: Map<String, Any>,
             tags: List<Pair<String, String?>>,
-        ): List<Pair<String, Map<String, Any>>> {
-            return emptyList()
-        }
+        ): List<Pair<String, Map<String, Any>>> = emptyList()
 
         override fun getCommit(
             remote: Map<String, Any>,
             parameters: Map<String, Any>,
             commitId: String,
-        ): Map<String, Any>? {
-            return null
-        }
+        ): Map<String, Any>? = null
 
         override fun syncDataStart(operation: RemoteOperation) {
         }
@@ -140,8 +130,8 @@ class ArchiveRemoteTest : StringSpec() {
             progress.add(ProgressEntry(type, message, percent))
         }
 
-    fun getOperation(type: RemoteOperationType): RemoteOperation {
-        return RemoteOperation(
+    private fun getOperation(type: RemoteOperationType): RemoteOperation =
+        RemoteOperation(
             updateProgress = updateProgress,
             remote = emptyMap(),
             parameters = emptyMap(),
@@ -150,7 +140,6 @@ class ArchiveRemoteTest : StringSpec() {
             commit = null,
             type = type,
         )
-    }
 
     init {
         "push updates progress correctly" {
