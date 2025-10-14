@@ -4,6 +4,9 @@
 
 package com.datadatdat.remote.rsync
 
+import com.datadatdat.remote.RemoteProgress
+import com.datadatdat.shell.CommandException
+import com.datadatdat.shell.CommandExecutor
 import io.kotlintest.TestCase
 import io.kotlintest.TestCaseOrder
 import io.kotlintest.TestResult
@@ -17,9 +20,6 @@ import io.mockk.every
 import io.mockk.impl.annotations.SpyK
 import io.mockk.just
 import io.mockk.mockk
-import com.datadatdat.remote.RemoteProgress
-import com.datadatdat.shell.CommandException
-import com.datadatdat.shell.CommandExecutor
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 
