@@ -1,8 +1,8 @@
 /*
- * Copyright The Titan Project Contributors.
+ * Copyright Datadatdat.
  */
 
-package io.titandata.remote.archive
+package com.datadatdat.remote.archive
 
 import io.kotlintest.TestCase
 import io.kotlintest.TestResult
@@ -17,10 +17,10 @@ import io.mockk.impl.annotations.OverrideMockKs
 import io.mockk.mockk
 import io.mockk.mockkConstructor
 import io.mockk.verify
-import io.titandata.remote.RemoteOperation
-import io.titandata.remote.RemoteOperationType
-import io.titandata.remote.RemoteProgress
-import io.titandata.shell.CommandExecutor
+import com.datadatdat.remote.RemoteOperation
+import com.datadatdat.remote.RemoteOperationType
+import com.datadatdat.remote.RemoteProgress
+import com.datadatdat.shell.CommandExecutor
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path

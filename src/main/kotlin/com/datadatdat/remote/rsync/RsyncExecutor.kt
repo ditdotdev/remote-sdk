@@ -1,12 +1,12 @@
 /*
- * Copyright The Titan Project Contributors.
+ * Copyright Datadatdat.
  */
 
-package io.titandata.remote.rsync
+package com.datadatdat.remote.rsync
 
-import io.titandata.remote.RemoteProgress
-import io.titandata.shell.CommandException
-import io.titandata.shell.CommandExecutor
+import com.datadatdat.remote.RemoteProgress
+import com.datadatdat.shell.CommandException
+import com.datadatdat.shell.CommandExecutor
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.InputStream

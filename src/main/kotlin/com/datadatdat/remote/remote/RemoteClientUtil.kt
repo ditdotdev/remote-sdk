@@ -1,8 +1,8 @@
 /*
- * Copyright The Titan Project Contributors.
+ * Copyright Datadatdat.
  */
 
-package io.titandata.remote
+package com.datadatdat.remote
 
 import java.net.URI
 
