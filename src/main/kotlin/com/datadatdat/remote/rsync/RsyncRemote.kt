@@ -1,14 +1,14 @@
 /*
- * Copyright The Titan Project Contributors.
+ * Copyright Datadatdat.
  */
 
-package io.titandata.remote.rsync
+package com.datadatdat.remote.rsync
 
-import io.titandata.remote.RemoteOperation
-import io.titandata.remote.RemoteOperationType
-import io.titandata.remote.RemoteProgress
-import io.titandata.remote.RemoteServer
-import io.titandata.shell.CommandExecutor
+import com.datadatdat.remote.RemoteOperation
+import com.datadatdat.remote.RemoteOperationType
+import com.datadatdat.remote.RemoteProgress
+import com.datadatdat.remote.RemoteServer
+import com.datadatdat.shell.CommandExecutor
 
 /**
  * This is a helper class for remote providers that operate by executing rsync (e.g. SSH). It handles the common

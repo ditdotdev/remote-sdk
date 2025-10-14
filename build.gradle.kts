@@ -1,5 +1,5 @@
 /*
- * Copyright The Titan Project Contributors.
+ * Copyright Datadatdat.
  */
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -28,7 +28,7 @@ repositories {
     mavenCentral()
     maven("https://dl.bintray.com/kotlin/kotlinx")
     maven {
-        name = "titan"
+        name = "datadatdat"
         url = uri("https://datadatdat-maven.s3.amazonaws.com")
     }
 }
@@ -36,16 +36,16 @@ repositories {
 val ktlint by configurations.creating
 
 dependencies {
-    implementation(kotlin("stdlib"))
-    implementation("io.titandata:command-executor:0.1.1")
-    implementation("org.slf4j:slf4j-api:2.0.17")
-    ktlint("com.pinterest.ktlint:ktlint-cli:1.7.1")
-    testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
-    testImplementation("io.mockk:mockk:1.14.6")
+	implementation(kotlin("stdlib"))
+	implementation("com.datadatdat:command-executor:1.0.0")
+	implementation("org.slf4j:slf4j-api:2.0.17")
+	ktlint("com.pinterest.ktlint:ktlint-cli:1.7.1")
+	testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
+	testImplementation("io.mockk:mockk:1.14.6")
 }
 
 // Jar configuration
-group = "io.titandata"
+group = "com.datadatdat"
 version = when(project.hasProperty("version")) {
     true -> project.property("version")!!
     false -> "latest"
@@ -63,18 +63,18 @@ val mavenBucket = when(project.hasProperty("mavenBucket")) {
 }
 
 publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            groupId = "io.titandata"
-            artifactId = "remote-sdk"
+	publications {
+		create<MavenPublication>("maven") {
+			groupId = "com.datadatdat"
+			artifactId = "remote-sdk"
 
-            from(components["java"])
-        }
-    }
+			from(components["java"])
+		}
+	}
 
     repositories {
         maven {
-            name = "titan"
+            name = "datadatdat"
             url = uri("s3://$mavenBucket")
             authentication {
                 create<AwsImAuthentication>("awsIm")

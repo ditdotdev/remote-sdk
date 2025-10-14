@@ -1,12 +1,12 @@
 /*
- * Copyright The Titan Project Contributors.
+ * Copyright Datadatdat.
  */
 
-package io.titandata.remote
+package com.datadatdat.remote
 
 /**
  * Event types for progress updates. This is a subset of all types that can be posted in the server, because the
- * terminal states (error, abort, complete) are handled by the titan server infrastructure.
+ * terminal states (error, abort, complete) are handled by the datadatdat server infrastructure.
  */
 enum class RemoteProgress {
     MESSAGE, // Singular message, just display and move on.
@@ -57,7 +57,7 @@ data class RemoteOperation(
 )
 
 /**
- * The remote client interface defines functionality that runs in the context of the titan server. It is responsible for
+ * The remote client interface defines functionality that runs in the context of the datadatdat server. It is responsible for
  * fetching remote commits and running push / pull operations.
  */
 interface RemoteServer {

@@ -1,8 +1,8 @@
 /*
- * Copyright The Titan Project Contributors.
+ * Copyright Datadatdat.
  */
 
-package io.titandata.remote.rsync
+package com.datadatdat.remote.rsync
 
 import io.kotlintest.TestCase
 import io.kotlintest.TestCaseOrder
@@ -17,9 +17,9 @@ import io.mockk.every
 import io.mockk.impl.annotations.SpyK
 import io.mockk.just
 import io.mockk.mockk
-import io.titandata.remote.RemoteProgress
-import io.titandata.shell.CommandException
-import io.titandata.shell.CommandExecutor
+import com.datadatdat.remote.RemoteProgress
+import com.datadatdat.shell.CommandException
+import com.datadatdat.shell.CommandExecutor
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 

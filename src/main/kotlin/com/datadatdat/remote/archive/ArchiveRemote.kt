@@ -1,14 +1,14 @@
 /*
- * Copyright The Titan Project Contributors.
+ * Copyright Datadatdat.
  */
 
-package io.titandata.remote.archive
+package com.datadatdat.remote.archive
 
-import io.titandata.remote.RemoteOperation
-import io.titandata.remote.RemoteOperationType
-import io.titandata.remote.RemoteProgress
-import io.titandata.remote.RemoteServer
-import io.titandata.shell.CommandExecutor
+import com.datadatdat.remote.RemoteOperation
+import com.datadatdat.remote.RemoteOperationType
+import com.datadatdat.remote.RemoteProgress
+import com.datadatdat.remote.RemoteServer
+import com.datadatdat.shell.CommandExecutor
 import java.io.File
 
 /**
