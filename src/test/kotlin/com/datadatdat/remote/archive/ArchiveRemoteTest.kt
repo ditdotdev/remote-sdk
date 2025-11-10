@@ -54,7 +54,7 @@ class ArchiveRemoteTest : StringSpec() {
 
         override fun validateRemote(remote: Map<String, Any>): Map<String, Any> = remote
 
-        override fun validateParameters(parameters: Map<String, Any>): Map<String, Any> = parameters
+        override fun validateParameters(parameters: Map<String, Any>?): Map<String, Any> = parameters ?: emptyMap()
 
         override fun listCommits(
             remote: Map<String, Any>,
