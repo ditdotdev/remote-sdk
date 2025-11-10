@@ -77,7 +77,7 @@ interface RemoteServer {
     /**
      * Validates the configuration of remote parameters.
      */
-    fun validateParameters(parameters: Map<String, Any>): Map<String, Any>
+    fun validateParameters(parameters: Map<String, Any>?): Map<String, Any>
 
     /**
      * Fetches a set of commits from the remote server. Commits are simply a tuple of (commitId, properties), with
