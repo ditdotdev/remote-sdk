@@ -39,7 +39,7 @@ dependencies {
 	implementation(kotlin("stdlib"))
 	implementation("com.datadatdat:command-executor:1.3.0")
 	implementation("org.slf4j:slf4j-api:2.0.17")
-	ktlint("com.pinterest.ktlint:ktlint-cli:1.7.1")
+	ktlint("com.pinterest.ktlint:ktlint-cli:1.8.0")
 	testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
 	testImplementation("io.mockk:mockk:1.14.6")
 }
