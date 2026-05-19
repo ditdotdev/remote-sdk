@@ -34,8 +34,6 @@ class RsyncExecutor(
         val log = LoggerFactory.getLogger(RsyncExecutor::class.java)
     }
 
-    private var tmpfile: File? = null
-
     /**
      * Regular expression to match rsync progress. The rsync source code looks like the following:
      *
@@ -102,8 +100,11 @@ class RsyncExecutor(
     }
 
     override fun run() {
+        // createTempFile() uses the JVM's default temp dir and only the current user has read
+        // permission on the new file (POSIX 0600). We delete it eagerly in the finally block
+        // below; deleteOnExit() is intentionally avoided because it only runs on normal JVM
+        // shutdown and is not guaranteed on abnormal exit.
         val file = createTempFile().toFile()
-        file.deleteOnExit()
         try {
             /*
              * Assuming that the remote and parameters are both from the SSH provider is not a
@@ -129,8 +130,12 @@ class RsyncExecutor(
             log.info("running command: ${args.joinToString()}")
             val process = cmd.start(*args)
             try {
-                val stream = process.inputStream
-                val endSeen = processOutput(stream)
+                // Closing the input stream is the consumer's responsibility; if we let
+                // process.destroy() do it we leak the underlying file descriptor on every
+                // invocation. processOutput() wraps the stream in .use{} so the underlying
+                // file descriptor is closed before we destroy the process, in both success
+                // and failure paths.
+                val endSeen = processOutput(process.inputStream)
 
                 // If we've consumed all stdout, the process should be done but wait to be sure
                 process.waitFor()
@@ -142,7 +147,8 @@ class RsyncExecutor(
                 // see the expected termination line.
                 if (!endSeen) {
                     log.error("rsync succeeded, but no summary statistics found")
-                    throw Exception("rsync command succeeded, but failed to find summary statistics")
+                    val msg = "rsync command succeeded, but failed to find summary statistics"
+                    throw CommandException(msg, 0, msg)
                 }
                 log.info("rsync succeeded")
             } catch (e: CommandException) {
@@ -153,22 +159,22 @@ class RsyncExecutor(
                 file.delete()
             }
         } finally {
-            cleanup()
+            // Belt-and-suspenders: ensure the temp file is gone even if buildSshCommand
+            // threw before the inner try/finally could clean it up.
+            file.delete()
         }
     }
 
-    fun processOutput(output: InputStream): Boolean {
-        val reader = output.bufferedReader()
-        var endSeen = false
-        while (true) {
-            val line = reader.readLine()
-            if (line == null) {
-                return endSeen
+    fun processOutput(output: InputStream): Boolean =
+        output.bufferedReader().use { reader ->
+            var endSeen = false
+            var line = reader.readLine()
+            while (line != null) {
+                endSeen = endSeen || processLine(line.trim())
+                line = reader.readLine()
             }
-
-            endSeen = endSeen || processLine(line.trim())
+            endSeen
         }
-    }
 
     /**
      * We run rsync with the argument "--info=progress2,stats2". This will create three bodies of
@@ -236,13 +242,6 @@ class RsyncExecutor(
         }
 
         return false
-    }
-
-    fun cleanup() {
-        if (tmpfile != null) {
-            tmpfile!!.delete()
-            tmpfile = null
-        }
     }
 
     /**
