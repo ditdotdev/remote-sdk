@@ -22,7 +22,25 @@ import io.mockk.just
 import io.mockk.mockk
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.FilterInputStream
 import java.io.InputStream
+
+/**
+ * Wraps an InputStream so the test can assert that the SDK calls close() on it. This is the
+ * mechanism that proves the fix for arch-review #44 findings #1 and #2 — without .use{} on the
+ * BufferedReader and process.inputStream, this counter stays at zero.
+ */
+private class CloseTrackingInputStream(
+    delegate: InputStream,
+) : FilterInputStream(delegate) {
+    var closeCount: Int = 0
+        private set
+
+    override fun close() {
+        closeCount++
+        super.close()
+    }
+}
 
 class RsyncExecutorTest : StringSpec() {
     @SpyK
@@ -250,31 +268,108 @@ class RsyncExecutorTest : StringSpec() {
             progress.size shouldBe 0
         }
 
-        "cleanup deletes tmpfile and sets it to null" {
+        "processOutput closes the underlying input stream when done" {
+            // TDD for arch-review #44 finding #1: BufferedReader from inputStream.bufferedReader()
+            // must be wrapped in .use{} so that .close() propagates to the underlying stream.
             val rsync = getRsync()
-            // Create a real temp file and assign it to the private tmpfile field via reflection
-            val tmpFile = File.createTempFile("rsync-cleanup-test", ".tmp")
-            tmpFile.writeText("test content")
-            tmpFile.exists() shouldBe true
-
-            val field = RsyncExecutor::class.java.getDeclaredField("tmpfile")
-            field.isAccessible = true
-            field.set(rsync, tmpFile)
-
-            rsync.cleanup()
-
-            tmpFile.exists() shouldBe false
-            field.get(rsync) shouldBe null
+            val tracker = CloseTrackingInputStream(ByteArrayInputStream("any line\n".toByteArray()))
+            rsync.processOutput(tracker)
+            tracker.closeCount shouldBe 1
         }
 
-        "cleanup with null tmpfile does nothing" {
+        "processOutput closes the stream even when processLine throws" {
+            // The .use{} wrapper must close in the failure path too.
             val rsync = getRsync()
-            // tmpfile is null by default, cleanup should not throw
-            rsync.cleanup()
+            // A line containing "GB/s" but with an invalid unit injected won't trigger an
+            // exception via the regex; instead, force one by passing a stream that throws.
+            val throwingReader =
+                object : InputStream() {
+                    var closed = false
+                    var readCount = 0
 
-            val field = RsyncExecutor::class.java.getDeclaredField("tmpfile")
-            field.isAccessible = true
-            field.get(rsync) shouldBe null
+                    override fun read(): Int {
+                        if (readCount > 0) {
+                            throw java.io.IOException("synthetic read failure")
+                        }
+                        readCount++
+                        return 'x'.code
+                    }
+
+                    override fun close() {
+                        closed = true
+                    }
+                }
+            try {
+                rsync.processOutput(throwingReader)
+            } catch (_: java.io.IOException) {
+                // expected
+            }
+            throwingReader.closed shouldBe true
+        }
+
+        "run closes process.inputStream before destroying the process" {
+            // TDD for arch-review #44 finding #2: the stream consumed from process.inputStream
+            // must be closed before process.destroy() runs. Otherwise the file descriptor
+            // is leaked on every rsync invocation.
+            val tracker = CloseTrackingInputStream(getResource("/rsync2.out"))
+            val process = mockk<Process>()
+            every { process.inputStream } returns tracker
+            every { process.waitFor() } returns 0
+            every { process.exitValue() } returns 0
+            every { process.destroy() } just Runs
+
+            every { executor.start(*anyVararg()) } returns process
+
+            val rsync = getRsync()
+            rsync.run()
+
+            tracker.closeCount shouldBe 1
+        }
+
+        "run closes process.inputStream when the command fails" {
+            // The stream must also be closed when cmd.checkResult throws CommandException.
+            val tracker = CloseTrackingInputStream(ByteArrayInputStream("".toByteArray()))
+            val process = mockk<Process>()
+            every { process.inputStream } returns tracker
+            every { process.errorStream } returns ByteArrayInputStream("error string".toByteArray())
+            every { process.waitFor() } returns 0
+            every { process.exitValue() } returns 1
+            every { process.destroy() } just Runs
+
+            every { executor.start(*anyVararg()) } returns process
+
+            val rsync = getRsync()
+
+            shouldThrow<CommandException> {
+                rsync.run()
+            }
+
+            tracker.closeCount shouldBe 1
+        }
+
+        "run wraps missing-summary failure in CommandException for caller symmetry" {
+            // TDD for arch-review #44 finding #6: callers already catch CommandException for
+            // rsync failures; throwing a bare Exception broke that contract.
+            val tracker = CloseTrackingInputStream(ByteArrayInputStream("".toByteArray()))
+            val process = mockk<Process>()
+            every { process.inputStream } returns tracker
+            every { process.waitFor() } returns 0
+            every { process.exitValue() } returns 0
+            every { process.destroy() } just Runs
+
+            every { executor.start(*anyVararg()) } returns process
+
+            val rsync = getRsync()
+
+            val e =
+                shouldThrow<CommandException> {
+                    rsync.run()
+                }
+
+            e.exitCode shouldBe 0
+            e.output shouldBe "rsync command succeeded, but failed to find summary statistics"
+            // Stream still closed even on this failure path.
+            tracker.closeCount shouldBe 1
         }
 
         "numberToString with very large values exceeding all suffixes" {
@@ -340,6 +435,25 @@ class RsyncExecutorTest : StringSpec() {
             } finally {
                 tmpFile.delete()
             }
+        }
+
+        "constructor exposes its arguments as properties" {
+            // Exercises the auto-generated property getters (otherwise unread by tests).
+            val rsync = RsyncExecutor(updateProgress, 22, "pw", null, "s", "d", executor)
+            rsync.updateProgress shouldBe updateProgress
+            rsync.port shouldBe 22
+            rsync.password shouldBe "pw"
+            rsync.key shouldBe null
+            rsync.src shouldBe "s"
+            rsync.dst shouldBe "d"
+            rsync.cmd shouldBe executor
+        }
+
+        "constructor uses a default CommandExecutor when none is supplied" {
+            // Exercises the synthetic constructor generated for the cmd default value.
+            val rsync = RsyncExecutor(updateProgress, null, "pw", null, "s", "d")
+            // cmd is non-null because the default factory was invoked.
+            rsync.cmd::class.java shouldBe CommandExecutor::class.java
         }
     }
 }

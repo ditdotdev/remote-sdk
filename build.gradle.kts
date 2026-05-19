@@ -21,12 +21,12 @@ buildscript {
 plugins {
     kotlin("jvm") version "2.3.21"
     id("com.github.ben-manes.versions") version("0.54.0")
+    jacoco
     `maven-publish`
 }
 
 repositories {
     mavenCentral()
-    maven("https://dl.bintray.com/kotlin/kotlinx")
     maven {
         name = "datadatdat"
         url = uri("https://datadatdat-maven.s3.amazonaws.com")
@@ -129,4 +129,14 @@ tasks.named("check").get().dependsOn(ktlintTask)
 // Test configuration
 tasks.test {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        csv.required.set(true)
+        xml.required.set(true)
+        html.required.set(true)
+    }
 }
