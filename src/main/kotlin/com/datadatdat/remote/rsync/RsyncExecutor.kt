@@ -32,6 +32,14 @@ class RsyncExecutor(
 ) : Runnable {
     companion object {
         val log = LoggerFactory.getLogger(RsyncExecutor::class.java)
+
+        /**
+         * Default known_hosts path used when [buildSshCommand] is invoked without
+         * an explicit `knownHostsFile`. Mirrors OpenSSH's default of
+         * `~/.ssh/known_hosts`. Resolved at call time, not at class load, so test
+         * runners that override `user.home` continue to work.
+         */
+        internal fun defaultKnownHostsFile(): String = System.getProperty("user.home") + "/.ssh/known_hosts"
     }
 
     /**
@@ -57,9 +65,28 @@ class RsyncExecutor(
      */
     private val completionRegex = Regex("^sent\\s+(\\d+).*\\s+(\\d+) bytes\\s+([\\d\\.]+) bytes/sec")
 
+    /**
+     * Build the ssh (or sshpass) command used by rsync's `-e` argument.
+     *
+     * Host-key verification policy (see remote-sdk#46, ssh-remote#60 item #3):
+     *
+     *  - Default (`skipHostCheck=false`): emit `StrictHostKeyChecking=yes` plus
+     *    a `UserKnownHostsFile` pointing at [knownHostsFile] (or
+     *    `~/.ssh/known_hosts` if the caller did not override). Unknown hosts
+     *    cause ssh to abort with `Host key verification failed.`, which the
+     *    caller can translate into actionable guidance.
+     *  - Opt-out (`skipHostCheck=true`): emit the legacy
+     *    `StrictHostKeyChecking=no` + `UserKnownHostsFile=/dev/null` pair.
+     *    Intended for trusted networks / CI where TOFU is acceptable.
+     *
+     * Both new parameters are appended at the end of the parameter list with
+     * default values so existing positional callers compile unchanged.
+     */
     fun buildSshCommand(
         file: File,
         vararg command: String,
+        skipHostCheck: Boolean = false,
+        knownHostsFile: String? = null,
     ): List<String> {
         val args = mutableListOf<String>()
 
@@ -92,8 +119,14 @@ class RsyncExecutor(
             args.addAll(arrayOf("-p", port.toString()))
         }
 
-        args.addAll(arrayOf("-o", "StrictHostKeyChecking=no"))
-        args.addAll(arrayOf("-o", "UserKnownHostsFile=/dev/null"))
+        if (skipHostCheck) {
+            args.addAll(arrayOf("-o", "StrictHostKeyChecking=no"))
+            args.addAll(arrayOf("-o", "UserKnownHostsFile=/dev/null"))
+        } else {
+            val resolvedKnownHosts = knownHostsFile ?: defaultKnownHostsFile()
+            args.addAll(arrayOf("-o", "StrictHostKeyChecking=yes"))
+            args.addAll(arrayOf("-o", "UserKnownHostsFile=$resolvedKnownHosts"))
+        }
         args.addAll(command)
 
         return args
