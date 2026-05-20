@@ -161,12 +161,18 @@ class RsyncExecutorTest : StringSpec() {
             e.output shouldBe "error string"
         }
 
+        // The legacy fixture-style buildSshCommand tests below pass
+        // `skipHostCheck = true` so they keep exercising the pre-#46 command
+        // shape without having to mock a per-test `known_hosts` file. Tests
+        // that exercise the secure default and its options live in the
+        // "Host-key verification" section further down.
+
         "buildSshCommand with key-based auth writes key and uses ssh -i" {
             val rsync = RsyncExecutor(updateProgress, null, null, "my-private-key", "src", "dst", executor)
             val tmpFile = File.createTempFile("rsync-test", ".tmp")
             tmpFile.deleteOnExit()
             try {
-                val result = rsync.buildSshCommand(tmpFile)
+                val result = rsync.buildSshCommand(tmpFile, skipHostCheck = true)
                 tmpFile.readText() shouldBe "my-private-key"
                 result[0] shouldBe "ssh"
                 result[1] shouldBe "-i"
@@ -183,7 +189,7 @@ class RsyncExecutorTest : StringSpec() {
             val tmpFile = File.createTempFile("rsync-test", ".tmp")
             tmpFile.deleteOnExit()
             try {
-                val result = rsync.buildSshCommand(tmpFile)
+                val result = rsync.buildSshCommand(tmpFile, skipHostCheck = true)
                 val portIndex = result.indexOf("-p")
                 portIndex shouldBe (result.size - 6) // -p 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=...
                 result[portIndex + 1] shouldBe "2222"
@@ -454,6 +460,142 @@ class RsyncExecutorTest : StringSpec() {
             val rsync = RsyncExecutor(updateProgress, null, "pw", null, "s", "d")
             // cmd is non-null because the default factory was invoked.
             rsync.cmd::class.java shouldBe CommandExecutor::class.java
+        }
+
+        // --- Host-key verification (remote-sdk#46, ssh-remote#60 item #3) -----
+        //
+        // Policy: default to verifying the remote host against a known_hosts
+        // file (`~/.ssh/known_hosts` unless `knownHostsFile` overrides it).
+        // Provide `skipHostCheck = true` as an explicit opt-out for trusted
+        // networks / CI. This replaces the prior unconditional
+        // `StrictHostKeyChecking=no` + `UserKnownHostsFile=/dev/null`.
+
+        "buildSshCommand defaults to StrictHostKeyChecking=yes and user known_hosts" {
+            // No `skipHostCheck` argument → secure default. The known_hosts
+            // path defaults to `~/.ssh/known_hosts`. We assert the exact
+            // options that go on the ssh command line.
+            val rsync = RsyncExecutor(updateProgress, null, "password", null, "src", "dst", executor)
+            val tmpFile = File.createTempFile("rsync-test", ".tmp")
+            tmpFile.deleteOnExit()
+            try {
+                val result = rsync.buildSshCommand(tmpFile)
+                val expectedKnownHosts = System.getProperty("user.home") + "/.ssh/known_hosts"
+                result.contains("StrictHostKeyChecking=yes") shouldBe true
+                result.contains("StrictHostKeyChecking=no") shouldBe false
+                result.contains("UserKnownHostsFile=$expectedKnownHosts") shouldBe true
+                result.contains("UserKnownHostsFile=/dev/null") shouldBe false
+            } finally {
+                tmpFile.delete()
+            }
+        }
+
+        "buildSshCommand with skipHostCheck=true disables host-key verification" {
+            // Explicit opt-out → legacy `no` + `/dev/null` pair, regardless of
+            // any `knownHostsFile` the caller may have supplied.
+            val rsync = RsyncExecutor(updateProgress, null, "password", null, "src", "dst", executor)
+            val tmpFile = File.createTempFile("rsync-test", ".tmp")
+            tmpFile.deleteOnExit()
+            try {
+                val result = rsync.buildSshCommand(tmpFile, skipHostCheck = true)
+                result.contains("StrictHostKeyChecking=no") shouldBe true
+                result.contains("UserKnownHostsFile=/dev/null") shouldBe true
+                result.contains("StrictHostKeyChecking=yes") shouldBe false
+            } finally {
+                tmpFile.delete()
+            }
+        }
+
+        "buildSshCommand with skipHostCheck=false uses secure defaults" {
+            // Same as the unset case but with the flag spelled out. This is
+            // the shape ssh-remote / delphix-remote will use once they thread
+            // their own `skipHostCheck` through.
+            val rsync = RsyncExecutor(updateProgress, null, "password", null, "src", "dst", executor)
+            val tmpFile = File.createTempFile("rsync-test", ".tmp")
+            tmpFile.deleteOnExit()
+            try {
+                val result = rsync.buildSshCommand(tmpFile, skipHostCheck = false)
+                val expectedKnownHosts = System.getProperty("user.home") + "/.ssh/known_hosts"
+                result.contains("StrictHostKeyChecking=yes") shouldBe true
+                result.contains("UserKnownHostsFile=$expectedKnownHosts") shouldBe true
+                result.contains("UserKnownHostsFile=/dev/null") shouldBe false
+            } finally {
+                tmpFile.delete()
+            }
+        }
+
+        "buildSshCommand accepts knownHostsFile override" {
+            // Caller can point at a non-default known_hosts file (for example,
+            // a per-service file or one managed by configuration management).
+            val rsync = RsyncExecutor(updateProgress, null, "password", null, "src", "dst", executor)
+            val tmpFile = File.createTempFile("rsync-test", ".tmp")
+            tmpFile.deleteOnExit()
+            try {
+                val result =
+                    rsync.buildSshCommand(
+                        tmpFile,
+                        skipHostCheck = false,
+                        knownHostsFile = "/etc/datadatdat/known_hosts",
+                    )
+                result.contains("StrictHostKeyChecking=yes") shouldBe true
+                result.contains("UserKnownHostsFile=/etc/datadatdat/known_hosts") shouldBe true
+                // The default path must not leak in when an override is set.
+                val defaultPath = System.getProperty("user.home") + "/.ssh/known_hosts"
+                result.contains("UserKnownHostsFile=$defaultPath") shouldBe false
+            } finally {
+                tmpFile.delete()
+            }
+        }
+
+        "buildSshCommand ignores knownHostsFile when skipHostCheck=true" {
+            // When the caller opts out of host-key checking entirely, any
+            // `knownHostsFile` is moot — the file is never consulted, and the
+            // emitted ssh args must reflect that.
+            val rsync = RsyncExecutor(updateProgress, null, "password", null, "src", "dst", executor)
+            val tmpFile = File.createTempFile("rsync-test", ".tmp")
+            tmpFile.deleteOnExit()
+            try {
+                val result =
+                    rsync.buildSshCommand(
+                        tmpFile,
+                        skipHostCheck = true,
+                        knownHostsFile = "/etc/datadatdat/known_hosts",
+                    )
+                result.contains("StrictHostKeyChecking=no") shouldBe true
+                result.contains("UserKnownHostsFile=/dev/null") shouldBe true
+                result.contains("UserKnownHostsFile=/etc/datadatdat/known_hosts") shouldBe false
+            } finally {
+                tmpFile.delete()
+            }
+        }
+
+        "buildSshCommand secure default still threads port and command args" {
+            // Smoke-test that the new host-key block does not regress the
+            // existing port-handling or trailing-`command` plumbing.
+            val rsync = RsyncExecutor(updateProgress, 2222, "password", null, "src", "dst", executor)
+            val tmpFile = File.createTempFile("rsync-test", ".tmp")
+            tmpFile.deleteOnExit()
+            try {
+                val result = rsync.buildSshCommand(tmpFile, "extra-arg")
+                result.contains("-p") shouldBe true
+                result[result.indexOf("-p") + 1] shouldBe "2222"
+                result.contains("StrictHostKeyChecking=yes") shouldBe true
+                // The trailing `command` varargs must come after the -o pairs.
+                result.last() shouldBe "extra-arg"
+            } finally {
+                tmpFile.delete()
+            }
+        }
+
+        "defaultKnownHostsFile resolves user.home at call time" {
+            // The companion helper reads `user.home` on every call so tests /
+            // sandboxes that override the system property see the override.
+            val original = System.getProperty("user.home")
+            try {
+                System.setProperty("user.home", "/tmp/fakehome")
+                RsyncExecutor.defaultKnownHostsFile() shouldBe "/tmp/fakehome/.ssh/known_hosts"
+            } finally {
+                System.setProperty("user.home", original)
+            }
         }
     }
 }
