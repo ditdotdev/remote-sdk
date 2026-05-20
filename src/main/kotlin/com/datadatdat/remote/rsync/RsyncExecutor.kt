@@ -29,6 +29,8 @@ class RsyncExecutor(
     val src: String,
     val dst: String,
     val cmd: CommandExecutor = CommandExecutor(),
+    val skipHostCheck: Boolean = false,
+    val knownHostsFile: String? = null,
 ) : Runnable {
     companion object {
         val log = LoggerFactory.getLogger(RsyncExecutor::class.java)
@@ -143,8 +145,19 @@ class RsyncExecutor(
              * Assuming that the remote and parameters are both from the SSH provider is not a
              * valid assumption. We will have to revisit this when we have add a second provider
              * that re-uses the rsync executor.
+             *
+             * Forward the constructor-supplied [skipHostCheck] and [knownHostsFile] so the rsync
+             * data-transfer SSH invocation honors the same host-key verification policy the
+             * caller configured. Without this, the data path silently used the
+             * [buildSshCommand] defaults (secure post-#46, but no opt-out reachable from
+             * consumers) regardless of what the provider passed at construction time.
              */
-            val sshCommand = buildSshCommand(file)
+            val sshCommand =
+                buildSshCommand(
+                    file,
+                    skipHostCheck = skipHostCheck,
+                    knownHostsFile = knownHostsFile,
+                )
             val args =
                 arrayOf(
                     "rsync",

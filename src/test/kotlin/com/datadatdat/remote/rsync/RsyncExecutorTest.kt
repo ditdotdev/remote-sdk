@@ -597,5 +597,130 @@ class RsyncExecutorTest : StringSpec() {
                 System.setProperty("user.home", original)
             }
         }
+
+        // --- Constructor host-key plumbing (remote-sdk follow-up to #46) ------
+        //
+        // PR #47 added `skipHostCheck` + `knownHostsFile` parameters to
+        // `buildSshCommand` but `run()` (the entry point consumers actually
+        // call) still invoked `buildSshCommand(file)` with the defaults. That
+        // left ssh-remote / delphix-remote unable to thread their own
+        // `skipHostCheck` through to the rsync data-transfer SSH invocation.
+        //
+        // These tests assert the *actual* args handed to `executor.start` so a
+        // regression that only updated the parameter list (without forwarding
+        // it inside `run()`) would fail.
+
+        "run forwards skipHostCheck=true into the rsync -e ssh command" {
+            // Construct with `skipHostCheck = true`; the rsync command's `-e`
+            // arg must contain the legacy `no` + `/dev/null` pair.
+            val captured = slotForArgs()
+            val process = okProcess()
+            every { executor.start(*varargAll { true }) } answers {
+                @Suppress("UNCHECKED_CAST")
+                captured.captured = invocation.args[0] as Array<String>
+                process
+            }
+            val rsync =
+                RsyncExecutor(
+                    updateProgress,
+                    null,
+                    "password",
+                    null,
+                    "src",
+                    "dst",
+                    executor,
+                    skipHostCheck = true,
+                )
+            rsync.run()
+            val eArg = captured.captured[captured.captured.indexOf("-e") + 1]
+            eArg.contains("StrictHostKeyChecking=no") shouldBe true
+            eArg.contains("UserKnownHostsFile=/dev/null") shouldBe true
+            eArg.contains("StrictHostKeyChecking=yes") shouldBe false
+        }
+
+        "run uses secure default when skipHostCheck unset" {
+            // Default constructor → secure pair: yes + ~/.ssh/known_hosts.
+            // We override user.home so the assertion is hermetic.
+            val captured = slotForArgs()
+            val process = okProcess()
+            every { executor.start(*varargAll { true }) } answers {
+                @Suppress("UNCHECKED_CAST")
+                captured.captured = invocation.args[0] as Array<String>
+                process
+            }
+            val originalHome = System.getProperty("user.home")
+            try {
+                System.setProperty("user.home", "/tmp/fakehome")
+                val rsync = RsyncExecutor(updateProgress, null, "password", null, "src", "dst", executor)
+                rsync.run()
+                val eArg = captured.captured[captured.captured.indexOf("-e") + 1]
+                eArg.contains("StrictHostKeyChecking=yes") shouldBe true
+                eArg.contains("UserKnownHostsFile=/tmp/fakehome/.ssh/known_hosts") shouldBe true
+                eArg.contains("UserKnownHostsFile=/dev/null") shouldBe false
+            } finally {
+                System.setProperty("user.home", originalHome)
+            }
+        }
+
+        "run forwards knownHostsFile override into the rsync -e ssh command" {
+            // Caller-supplied `knownHostsFile` must land on the actual rsync
+            // command line, not just inside `buildSshCommand`.
+            val captured = slotForArgs()
+            val process = okProcess()
+            every { executor.start(*varargAll { true }) } answers {
+                @Suppress("UNCHECKED_CAST")
+                captured.captured = invocation.args[0] as Array<String>
+                process
+            }
+            val rsync =
+                RsyncExecutor(
+                    updateProgress,
+                    null,
+                    "password",
+                    null,
+                    "src",
+                    "dst",
+                    executor,
+                    skipHostCheck = false,
+                    knownHostsFile = "/etc/datadatdat/known_hosts",
+                )
+            rsync.run()
+            val eArg = captured.captured[captured.captured.indexOf("-e") + 1]
+            eArg.contains("StrictHostKeyChecking=yes") shouldBe true
+            eArg.contains("UserKnownHostsFile=/etc/datadatdat/known_hosts") shouldBe true
+        }
+
+        "constructor exposes skipHostCheck and knownHostsFile as properties" {
+            // Exercises the auto-generated property getters for the two new
+            // constructor parameters.
+            val rsync =
+                RsyncExecutor(
+                    updateProgress,
+                    22,
+                    "pw",
+                    null,
+                    "s",
+                    "d",
+                    executor,
+                    skipHostCheck = true,
+                    knownHostsFile = "/some/path",
+                )
+            rsync.skipHostCheck shouldBe true
+            rsync.knownHostsFile shouldBe "/some/path"
+        }
+    }
+
+    private fun slotForArgs() = io.mockk.slot<Array<String>>()
+
+    private fun okProcess(): Process {
+        // A minimal Process mock that returns a well-formed rsync2 fixture so
+        // `run()` completes the happy path and we can inspect what was passed
+        // to `executor.start`.
+        val proc = mockk<Process>()
+        every { proc.inputStream } returns getResource("/rsync2.out")
+        every { proc.waitFor() } returns 0
+        every { proc.exitValue() } returns 0
+        every { proc.destroy() } just Runs
+        return proc
     }
 }
