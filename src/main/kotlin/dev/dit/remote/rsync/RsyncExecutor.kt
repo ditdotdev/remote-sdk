@@ -1,12 +1,12 @@
 /*
- * Copyright Datadatdat.
+ * Copyright Dit.
  */
 
-package com.datadatdat.remote.rsync
+package dev.dit.remote.rsync
 
-import com.datadatdat.remote.RemoteProgress
-import com.datadatdat.shell.CommandException
-import com.datadatdat.shell.CommandExecutor
+import dev.dit.remote.RemoteProgress
+import dev.dit.shell.CommandException
+import dev.dit.shell.CommandExecutor
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.InputStream

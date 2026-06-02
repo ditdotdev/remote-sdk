@@ -1,13 +1,13 @@
 /*
- * Copyright Datadatdat.
+ * Copyright Dit.
  */
 
-package com.datadatdat.remote.archive
+package dev.dit.remote.rsync
 
-import com.datadatdat.remote.RemoteOperation
-import com.datadatdat.remote.RemoteOperationType
-import com.datadatdat.remote.RemoteProgress
-import com.datadatdat.shell.CommandExecutor
+import dev.dit.remote.RemoteOperation
+import dev.dit.remote.RemoteOperationType
+import dev.dit.remote.RemoteProgress
+import dev.dit.shell.CommandExecutor
 import io.kotlintest.TestCase
 import io.kotlintest.TestResult
 import io.kotlintest.shouldBe
@@ -20,34 +20,33 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.OverrideMockKs
 import io.mockk.mockk
 import io.mockk.mockkConstructor
-import io.mockk.verify
-import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 
-class ArchiveRemoteTest : StringSpec() {
+class RsyncRemoteTest : StringSpec() {
     @MockK
     lateinit var executor: CommandExecutor
 
-    class TestRemote : ArchiveRemote() {
-        var archive: File? = null
+    class TestRemote : RsyncRemote() {
+        var src: String? = null
+        var dst: String? = null
 
-        override fun pushArchive(
+        override fun getRemotePath(
             operation: RemoteOperation,
             operationData: Any?,
             volume: String,
-            archive: File,
-        ) {
-            this.archive = archive
-        }
+        ): String = "user@host:/path"
 
-        override fun pullArchive(
+        override fun getRsync(
             operation: RemoteOperation,
             operationData: Any?,
-            volume: String,
-            archive: File,
-        ) {
-            this.archive = archive
+            src: String,
+            dst: String,
+            executor: CommandExecutor,
+        ): RsyncExecutor {
+            this.src = src
+            this.dst = dst
+            return mockk(relaxed = true)
         }
 
         override fun getProvider(): String = "test"
@@ -150,22 +149,17 @@ class ArchiveRemoteTest : StringSpec() {
                 null,
                 "volume",
                 "description",
-                "/path",
+                "/volume",
                 scratchPath.toString(),
             )
 
-            progress.size shouldBe 4
+            progress.size shouldBe 1
             progress[0].type shouldBe RemoteProgress.START
-            progress[0].message shouldBe "Creating archive for description"
-            progress[1].type shouldBe RemoteProgress.END
-            progress[1].message shouldBe null
-            progress[2].type shouldBe RemoteProgress.START
-            progress[2].message shouldBe "Pushing archive for description"
-            progress[3].type shouldBe RemoteProgress.END
-            progress[3].message shouldBe null
+            progress[0].message shouldBe "Syncing description"
+            progress[0].percent shouldBe 0
         }
 
-        "push creates archive correctly" {
+        "push syncs data correctly" {
             every { executor.exec(any<Process>(), any()) } returns ""
 
             server.syncDataVolume(
@@ -173,16 +167,12 @@ class ArchiveRemoteTest : StringSpec() {
                 null,
                 "volume",
                 "description",
-                "/path",
+                "/volume",
                 scratchPath.toString(),
             )
 
-            val archivePath = "$scratchPath/volume.tar.gz"
-            server.archive!!.path shouldBe archivePath.replace('/', java.io.File.separatorChar)
-
-            verify {
-                executor.exec(any<Process>(), "tar, czf, $archivePath, .")
-            }
+            server.src shouldBe "/volume"
+            server.dst shouldBe "user@host:/path"
         }
 
         "pull updates progress correctly" {
@@ -193,22 +183,17 @@ class ArchiveRemoteTest : StringSpec() {
                 null,
                 "volume",
                 "description",
-                "/path",
+                "/volume",
                 scratchPath.toString(),
             )
 
-            progress.size shouldBe 4
+            progress.size shouldBe 1
             progress[0].type shouldBe RemoteProgress.START
-            progress[0].message shouldBe "Pulling archive for description"
-            progress[1].type shouldBe RemoteProgress.END
-            progress[1].message shouldBe null
-            progress[2].type shouldBe RemoteProgress.START
-            progress[2].message shouldBe "Extracting archive for description"
-            progress[3].type shouldBe RemoteProgress.END
-            progress[3].message shouldBe null
+            progress[0].message shouldBe "Syncing description"
+            progress[0].percent shouldBe 0
         }
 
-        "pull extracts archive correctly" {
+        "pull syncs data correctly" {
             every { executor.exec(any<Process>(), any()) } returns ""
 
             server.syncDataVolume(
@@ -216,16 +201,12 @@ class ArchiveRemoteTest : StringSpec() {
                 null,
                 "volume",
                 "description",
-                "/path",
+                "/volume",
                 scratchPath.toString(),
             )
 
-            val archivePath = "$scratchPath/volume.tar.gz"
-            server.archive!!.path shouldBe archivePath.replace('/', java.io.File.separatorChar)
-
-            verify {
-                executor.exec(any<Process>(), "tar, xzf, $archivePath")
-            }
+            server.dst shouldBe "/volume"
+            server.src shouldBe "user@host:/path"
         }
     }
 }

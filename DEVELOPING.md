@@ -1,14 +1,14 @@
 # Project Development
 
 For general information about contributing changes, see the
-[Contributor Guidelines](https://github.com/datadatdat/.github/blob/master/CONTRIBUTING.md).
+[Contributor Guidelines](https://github.com/ditdotdev/.github/blob/master/CONTRIBUTING.md).
 
 ## How it Works
 
 There are two main interfaces provided by the SDK: `RemoteClient` and
 `RemoteServer`. Implementations should generate separate jar files,
 `[provider]-remote-client.jar` and `[provider]-remote-server.jar`, that
-are then pulled directly into the `Datadatdat-server` distribution.
+are then pulled directly into the `Dit-server` distribution.
 
 The client code is run within the CLI and is used to parse URIs, manage remote
 properties, and construct remote parameters. With the S3 provider, for example,

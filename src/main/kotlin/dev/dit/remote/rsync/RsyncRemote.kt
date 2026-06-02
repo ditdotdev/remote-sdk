@@ -1,14 +1,14 @@
 /*
- * Copyright Datadatdat.
+ * Copyright Dit.
  */
 
-package com.datadatdat.remote.rsync
+package dev.dit.remote.rsync
 
-import com.datadatdat.remote.RemoteOperation
-import com.datadatdat.remote.RemoteOperationType
-import com.datadatdat.remote.RemoteProgress
-import com.datadatdat.remote.RemoteServer
-import com.datadatdat.shell.CommandExecutor
+import dev.dit.remote.RemoteOperation
+import dev.dit.remote.RemoteOperationType
+import dev.dit.remote.RemoteProgress
+import dev.dit.remote.RemoteServer
+import dev.dit.shell.CommandExecutor
 
 /**
  * This is a helper class for remote providers that operate by executing rsync (e.g. SSH). It handles the common

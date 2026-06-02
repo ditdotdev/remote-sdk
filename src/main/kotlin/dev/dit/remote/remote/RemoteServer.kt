@@ -1,12 +1,12 @@
 /*
- * Copyright Datadatdat.
+ * Copyright Dit.
  */
 
-package com.datadatdat.remote
+package dev.dit.remote
 
 /**
  * Event types for progress updates. This is a subset of all types that can be posted in the server, because the
- * terminal states (error, abort, complete) are handled by the datadatdat server infrastructure.
+ * terminal states (error, abort, complete) are handled by the dit server infrastructure.
  */
 enum class RemoteProgress {
     MESSAGE, // Singular message, just display and move on.
@@ -57,7 +57,7 @@ data class RemoteOperation(
 )
 
 /**
- * The remote client interface defines functionality that runs in the context of the datadatdat server. It is responsible for
+ * The remote client interface defines functionality that runs in the context of the dit server. It is responsible for
  * fetching remote commits and running push / pull operations.
  */
 interface RemoteServer {
