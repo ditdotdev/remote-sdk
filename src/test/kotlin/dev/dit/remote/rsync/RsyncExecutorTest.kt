@@ -1,12 +1,12 @@
 /*
- * Copyright Datadatdat.
+ * Copyright Dit.
  */
 
-package com.datadatdat.remote.rsync
+package dev.dit.remote.rsync
 
-import com.datadatdat.remote.RemoteProgress
-import com.datadatdat.shell.CommandException
-import com.datadatdat.shell.CommandExecutor
+import dev.dit.remote.RemoteProgress
+import dev.dit.shell.CommandException
+import dev.dit.shell.CommandExecutor
 import io.kotlintest.TestCase
 import io.kotlintest.TestCaseOrder
 import io.kotlintest.TestResult
@@ -534,10 +534,10 @@ class RsyncExecutorTest : StringSpec() {
                     rsync.buildSshCommand(
                         tmpFile,
                         skipHostCheck = false,
-                        knownHostsFile = "/etc/datadatdat/known_hosts",
+                        knownHostsFile = "/etc/ditdotdev/known_hosts",
                     )
                 result.contains("StrictHostKeyChecking=yes") shouldBe true
-                result.contains("UserKnownHostsFile=/etc/datadatdat/known_hosts") shouldBe true
+                result.contains("UserKnownHostsFile=/etc/ditdotdev/known_hosts") shouldBe true
                 // The default path must not leak in when an override is set.
                 val defaultPath = System.getProperty("user.home") + "/.ssh/known_hosts"
                 result.contains("UserKnownHostsFile=$defaultPath") shouldBe false
@@ -558,11 +558,11 @@ class RsyncExecutorTest : StringSpec() {
                     rsync.buildSshCommand(
                         tmpFile,
                         skipHostCheck = true,
-                        knownHostsFile = "/etc/datadatdat/known_hosts",
+                        knownHostsFile = "/etc/ditdotdev/known_hosts",
                     )
                 result.contains("StrictHostKeyChecking=no") shouldBe true
                 result.contains("UserKnownHostsFile=/dev/null") shouldBe true
-                result.contains("UserKnownHostsFile=/etc/datadatdat/known_hosts") shouldBe false
+                result.contains("UserKnownHostsFile=/etc/ditdotdev/known_hosts") shouldBe false
             } finally {
                 tmpFile.delete()
             }
@@ -682,12 +682,12 @@ class RsyncExecutorTest : StringSpec() {
                     "dst",
                     executor,
                     skipHostCheck = false,
-                    knownHostsFile = "/etc/datadatdat/known_hosts",
+                    knownHostsFile = "/etc/ditdotdev/known_hosts",
                 )
             rsync.run()
             val eArg = captured.captured[captured.captured.indexOf("-e") + 1]
             eArg.contains("StrictHostKeyChecking=yes") shouldBe true
-            eArg.contains("UserKnownHostsFile=/etc/datadatdat/known_hosts") shouldBe true
+            eArg.contains("UserKnownHostsFile=/etc/ditdotdev/known_hosts") shouldBe true
         }
 
         "constructor exposes skipHostCheck and knownHostsFile as properties" {

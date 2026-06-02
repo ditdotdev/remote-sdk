@@ -1,14 +1,14 @@
 /*
- * Copyright Datadatdat.
+ * Copyright Dit.
  */
 
-package com.datadatdat.remote.archive
+package dev.dit.remote.archive
 
-import com.datadatdat.remote.RemoteOperation
-import com.datadatdat.remote.RemoteOperationType
-import com.datadatdat.remote.RemoteProgress
-import com.datadatdat.remote.RemoteServer
-import com.datadatdat.shell.CommandExecutor
+import dev.dit.remote.RemoteOperation
+import dev.dit.remote.RemoteOperationType
+import dev.dit.remote.RemoteProgress
+import dev.dit.remote.RemoteServer
+import dev.dit.shell.CommandExecutor
 import java.io.File
 
 /**
