@@ -1,5 +1,5 @@
 /*
- * Copyright Datadatdat.
+ * Copyright Dit.
  */
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -28,8 +28,8 @@ plugins {
 repositories {
     mavenCentral()
     maven {
-        name = "datadatdat"
-        url = uri("https://datadatdat-maven.s3.amazonaws.com")
+        name = "dit"
+        url = uri("https://dit-maven.s3.amazonaws.com")
     }
 }
 
@@ -37,7 +37,7 @@ val ktlint by configurations.creating
 
 dependencies {
 	implementation(kotlin("stdlib"))
-	implementation("com.datadatdat:command-executor:1.9.2")
+	implementation("dev.dit:command-executor:1.9.3")
 	implementation("org.slf4j:slf4j-api:2.0.18")
 	ktlint("com.pinterest.ktlint:ktlint-cli:1.8.0")
 	testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
@@ -45,7 +45,7 @@ dependencies {
 }
 
 // Jar configuration
-group = "com.datadatdat"
+group = "dev.dit"
 version = when(project.hasProperty("version")) {
     true -> project.property("version")!!
     false -> "latest"
@@ -59,13 +59,13 @@ java {
 // Maven publishing configuration
 val mavenBucket = when(project.hasProperty("mavenBucket")) {
     true -> project.property("mavenBucket")
-    false -> "datadatdat-maven"
+    false -> "dit-maven"
 }
 
 publishing {
 	publications {
 		create<MavenPublication>("maven") {
-			groupId = "com.datadatdat"
+			groupId = "dev.dit"
 			artifactId = "remote-sdk"
 
 			from(components["java"])
@@ -74,7 +74,7 @@ publishing {
 
     repositories {
         maven {
-            name = "datadatdat"
+            name = "dit"
             url = uri("s3://$mavenBucket")
             authentication {
                 create<AwsImAuthentication>("awsIm")

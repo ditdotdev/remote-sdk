@@ -1,8 +1,8 @@
 /*
- * Copyright Datadatdat.
+ * Copyright Dit.
  */
 
-package com.datadatdat.remote
+package dev.dit.remote
 
 import java.time.Instant
 import java.time.OffsetDateTime
