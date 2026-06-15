@@ -37,7 +37,7 @@ val ktlint by configurations.creating
 
 dependencies {
 	implementation(kotlin("stdlib"))
-	implementation("dev.dit:command-executor:1.9.6")
+	implementation("dev.dit:command-executor:1.9.7")
 	implementation("org.slf4j:slf4j-api:2.0.18")
 	ktlint("com.pinterest.ktlint:ktlint-cli:1.8.0")
 	testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
